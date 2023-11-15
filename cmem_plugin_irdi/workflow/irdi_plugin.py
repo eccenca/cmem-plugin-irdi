@@ -55,10 +55,11 @@ class IrdiPlugin(WorkflowPlugin):
 
     def __init__(
             self, graph: str, icd: str, oi: str, opi: str, opis: str, ai: str, csi: str
-    ):
+    ):  # pylint: disable=C0103,R0913
         self.graph = graph
         self.icd = icd
         self.oi = oi
+        self.opi = opi
         self.opis = opis
         self.ai = ai
         self.csi = csi
