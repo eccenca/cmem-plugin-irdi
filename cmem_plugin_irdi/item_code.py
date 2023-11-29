@@ -1,7 +1,5 @@
 """creating and storing item codes"""
 from cmem.cmempy.queries import SparqlQuery
-from cmem_plugin_base.dataintegration.utils import setup_cmempy_super_user_access
-
 from cmem_plugin_irdi.utils import base_36_encode
 
 GET_COUNT: SparqlQuery = SparqlQuery(text="""
@@ -52,7 +50,7 @@ def generate_item_code(graph: str, identifier: str) -> str:
     :param identifier: A unique identifier for the counter.
     :return: A base 36 item code
     """
-    setup_cmempy_super_user_access()
+    # setup_cmempy_user_access()
 
     placeholders = {"graph": graph, "identifier": identifier}
 
@@ -63,4 +61,9 @@ def generate_item_code(graph: str, identifier: str) -> str:
     # TODO empty result
     count = int(res["results"]["bindings"][0]["count"]["value"])
 
-    return base_36_encode(count)
+    item_code = base_36_encode(count)
+    if len(item_code) > 6:
+        raise ValueError(f"Maximum Item Code length (6) for "
+                         f"counter {identifier} reached")
+
+    return item_code
