@@ -15,7 +15,7 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.utils import setup_cmempy_user_access
 
 from cmem_plugin_irdi.components import components
-from cmem_plugin_irdi.item_code import generate_item_code
+from cmem_plugin_irdi.item_code import generate_item_code, init_counter
 
 PARAMETERS = [
     PluginParameter(
@@ -24,7 +24,12 @@ PARAMETERS = [
         description="Graph in which the Item Code (IC) counter is stored",
         param_type=GraphParameterType(allow_only_autocompleted_values=False),
     ),
-    PluginParameter(name="irdi_property", label="Property"),
+    PluginParameter(
+        name="irdi_property",
+        label="Property",
+        default_value="http://purl.org/dc/terms/identifier",
+        advanced=True,
+    ),
 ] + [parameter["parameter"] for parameter in components.values()]
 
 
@@ -35,13 +40,13 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
     def __init__(  # noqa: PLR0913
         self,
         graph: str,
-        irdi_property: str,
         icd: str,
         oi: str,
-        opi: str = "",
-        opis: str = "",
-        ai: str = "",
-        csi: str | None = None,
+        opi: str,
+        opis: str,
+        ai: str,
+        csi: str,
+        irdi_property: str = "http://purl.org/dc/terms/identifier",
     ):
         self.graph = graph
         self.irdi_property = irdi_property
@@ -62,6 +67,8 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
         """Execute Workflow plugin"""
         setup_cmempy_user_access(context.user)
+        init_counter(self.graph, self.counter)
+
         schema = EntitySchema(type_uri="urn:type", paths=[EntityPath(self.irdi_property)])
         output = []
         for entities in inputs:

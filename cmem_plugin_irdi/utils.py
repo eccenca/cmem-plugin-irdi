@@ -7,6 +7,9 @@ def base_36_encode(number: int) -> str:
     :param number: base 10 integer
     :return: base 36 string
     """
+    if number == 0:
+        return "0"
+
     encoded: str = ""
     while number > 0:
         number, remainder = divmod(number, 36)
