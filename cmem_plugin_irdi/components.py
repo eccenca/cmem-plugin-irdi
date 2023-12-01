@@ -4,26 +4,22 @@ from cmem_plugin_base.dataintegration.description import PluginParameter
 components = {
     "icd": {
         "parameter": PluginParameter(
-            name="icd",
-            label="ICD (International Code Designator): Numeric, 4 characters",
-            description="International Code Designator",
+            name="icd", label="International Code Designator (ICD): Numeric, 4 characters"
         ),
         "regex": r"^\d{4}$",
     },
     "oi": {
         "parameter": PluginParameter(
             name="oi",
-            label="OI (Organization Identifier): Numeric, 4 characters",
-            description="Organization Identifier",
+            label="Organization Identifier (OI): Numeric, 4 characters",
         ),
         "regex": r"^\d{4}$",
     },
     "opi": {
         "parameter": PluginParameter(
             name="opi",
-            label="OPI (Organization Part Identifier): "
-            "Alphanumeric, up to 35 characters (base36)",
-            description="Organization Part Identifier",
+            label="Organization Part Identifier (OPI): Alphanumeric, up to 35 "
+            "characters (base36)",
             default_value="",
         ),
         "regex": r"^[a-zA-Z0-9]{0,35}$",
@@ -31,8 +27,7 @@ components = {
     "opis": {
         "parameter": PluginParameter(
             name="opis",
-            label="OPIS (OPI Source Indicator): Numeric, 1 character",
-            description="OPI Source Indicator",
+            label="OPI Source Indicator (OPIS): Numeric, 1 character",
             default_value="",
         ),
         "regex": r"^\d$",
@@ -40,8 +35,7 @@ components = {
     "ai": {
         "parameter": PluginParameter(
             name="ai",
-            label="AI (Additional information): Numeric, 4 characters",
-            description="Additional information",
+            label="Additional information (AI): Numeric, 4 characters",
             default_value="",
         ),
         "regex": r"^\d{4}$",
@@ -49,8 +43,7 @@ components = {
     "csi": {
         "parameter": PluginParameter(
             name="csi",
-            label="CSI (Code-space identifier): Alphanumeric, 2 character (base36)",
-            description="Code-space identifier",
+            label="Code-space identifier (CSI): Alphanumeric, 2 character (base36)",
         ),
         "regex": r"^[a-zA-Z0-9]{2}$",
     },

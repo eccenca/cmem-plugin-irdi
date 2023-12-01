@@ -31,7 +31,11 @@ INPUTS = [
     Entities(
         entities=[Entity(uri=f"urn:entity_{i}", values=[[]]) for i in range(10)],
         schema=EntitySchema(type_uri="urn:entity", paths=[]),
-    )
+    ),
+    Entities(
+        entities=[Entity(uri=f"urn:entity_{i}", values=[[]]) for i in range(10, 20)],
+        schema=EntitySchema(type_uri="urn:entity", paths=[]),
+    ),
 ]
 
 
