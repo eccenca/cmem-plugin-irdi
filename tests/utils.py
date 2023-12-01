@@ -7,6 +7,7 @@ import pytest
 # check for cmem environment and skip if not present
 from cmem.cmempy.api import get_token
 from cmem.cmempy.config import get_oauth_default_credentials
+from cmem.cmempy.queries import SparqlQuery
 from cmem_plugin_base.dataintegration.context import (
     ExecutionContext,
     PluginContext,
@@ -14,6 +15,7 @@ from cmem_plugin_base.dataintegration.context import (
     TaskContext,
     UserContext,
 )
+from cmem_plugin_base.dataintegration.entity import Entities
 
 needs_cmem = pytest.mark.skipif(
     os.environ.get("CMEM_BASE_URI", "") == "", reason="Needs CMEM configuration"
@@ -68,3 +70,14 @@ class TestExecutionContext(ExecutionContext):
         self.report = ReportContext()
         self.task = TestTaskContext(project_id=project_id, task_id=task_id)
         self.user = TestUserContext()
+
+
+def drop_graph(graph: str) -> None:
+    """Drop graph"""
+    query = SparqlQuery(text="""DROP SILENT GRAPH <{{graph}}>""", query_type="UPDATE")
+    query.get_results(placeholder={"graph": graph})
+
+
+def get_values(entities: Entities) -> list[str]:
+    """Return all values of all entities"""
+    return [i for entity in entities.entities for j in entity.values for i in j]

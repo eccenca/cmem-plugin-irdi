@@ -1,9 +1,13 @@
 """creating and storing item codes"""
+from pathlib import Path
+
+from cmem.cmempy.dp.proxy.graph import post
 from cmem.cmempy.queries import SparqlQuery
 
 from cmem_plugin_irdi.utils import base_36_encode
 
 MAX_IC_LENGTH = 6
+COUNTER_ONTOLOGY_GRAPH = "http://purl.org/ontology/co/core#"
 
 INITIALIZE_COUNTER = SparqlQuery(
     text="""
@@ -14,60 +18,20 @@ INITIALIZE_COUNTER = SparqlQuery(
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-    INSERT DATA {
-        GRAPH <{{graph}}> {
-            co:Counter
-              rdf:type rdfs:Class , owl:Class ;
-              rdfs:comment "Counter of a given object/ given objects, which are related to that counter."@en ;
-              rdfs:isDefinedBy co: ;
-              rdfs:label "Counter"@en ;
-              rdfs:subClassOf owl:Thing ;
-              rdfs:subClassOf
-                      [ rdf:type owl:Restriction ;
-                        owl:cardinality "1"^^xsd:nonNegativeInteger ;
-                        owl:onProperty co:count
-                      ] ;
-              vs:term_status "stable"@en .
 
-            co:count
-              rdf:type rdf:Property , owl:FunctionalProperty , owl:DatatypeProperty ;
-              rdfs:comment "Links a counter resource to the actual count"@en ;
-              rdfs:domain co:Counter ;
-              rdfs:isDefinedBy co: ;
-              rdfs:label "has count"@en ;
-              rdfs:range xsd:integer ;
-              vs:term_status "stable"@en .
-
-            co:counter
-              rdf:type rdf:Property , owl:ObjectProperty ;
-              rdfs:comment "Links an object to a counter resource. Please feel free to create further sub properties with more restricted domains."@en ;
-              rdfs:isDefinedBy co: ;
-              rdfs:label "has counter"@en ;
-              rdfs:range co:Counter ;
-              vs:term_status "stable"@en .
-
-            co:object
-              rdf:type rdf:Property , owl:ObjectProperty ;
-              rdfs:comment "Links a counter resource to an object. Please feel free to create further sub properties with more restricted ranges."@en ;
-              rdfs:domain co:Counter ;
-              rdfs:isDefinedBy co: ;
-              rdfs:label "has object"@en ;
-              owl:inverseOf co:counter ;
-              vs:term_status "testing"@en .
-
-            <https://ns.eccenca.com/counter/counted_object> a owl:Class ;
-                rdfs:label "Counted object" ;
-                rdfs:comment "Object which is counted by a co:Counter" .
-        }
-    };
     WITH <{{graph}}>
     INSERT {
         <{{graph}}> a <https://vocab.eccenca.com/di/Dataset> .
 
+        <https://ns.eccenca.com/irdi/csi/{{csi}}> a owl:Class;
+            rdfs:label "{{csi_label}}";
+            rdfs:comment "{{csi_description}}" .
+
+
         ?counter a co:Counter ;
                  co:object ?counted_object .
 
-        ?counted_object a <https://ns.eccenca.com/counter/counted_object> ;
+        ?counted_object a <https://ns.eccenca.com/irdi/csi/{{csi}}> ;
                         dcterms:identifier "{{identifier}}" ;
                         rdfs:label "{{identifier}}" ;
                         co:counter ?counter .
@@ -76,11 +40,11 @@ INITIALIZE_COUNTER = SparqlQuery(
         BIND(URI(CONCAT("https://ns.eccenca.com/counter/",
                         ?identifier_encoded
                         )) as ?counter)
-        BIND(URI(CONCAT("https://ns.eccenca.com/counter/counted_object/",
+        BIND(URI(CONCAT("https://ns.eccenca.com/irdi/csi/{{csi}}/",
                         ?identifier_encoded
                         )) as ?counted_object)
     }
-    """,  # noqa: E501
+    """,
     query_type="UPDATE",
 )
 
@@ -136,6 +100,7 @@ def generate_item_code(graph: str, identifier: str) -> str:
 
     :param graph: The graph in which the counter and its value are stored
     :param identifier: A unique identifier for the counter.
+    :param n:
     :return: A base 36 item code
     """
     placeholders = {"graph": graph, "identifier": identifier}
@@ -156,10 +121,25 @@ def generate_item_code(graph: str, identifier: str) -> str:
     return item_code
 
 
-def init_counter(graph: str, identifier: str) -> None:
+def init_counter(
+        graph: str, identifier: str, csi: str, csi_label: str, csi_description: str
+) -> None:
     """Initialize counter entity
 
     :param graph: The graph in which the counter is stored
     :param identifier: A unique identifier for the counter
     """
-    INITIALIZE_COUNTER.get_results(placeholder={"graph": graph, "identifier": identifier})
+    # Get path to vocabulary
+    current_directory = Path(__file__).resolve().parent
+    absolute_path = current_directory / "vocabs/counterontology.ttl"
+
+    post(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
+    INITIALIZE_COUNTER.get_results(
+        placeholder={
+            "graph": graph,
+            "identifier": identifier,
+            "csi": csi,
+            "csi_label": csi_label,
+            "csi_description": csi_description,
+        }
+    )

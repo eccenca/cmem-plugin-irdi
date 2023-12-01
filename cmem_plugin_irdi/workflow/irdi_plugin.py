@@ -17,6 +17,9 @@ from cmem_plugin_base.dataintegration.utils import setup_cmempy_user_access
 from cmem_plugin_irdi.components import components
 from cmem_plugin_irdi.item_code import generate_item_code, init_counter
 
+# Version Identifier
+VI = "001"
+
 PARAMETERS = [
     PluginParameter(
         name="graph",
@@ -29,6 +32,15 @@ PARAMETERS = [
         label="Property",
         default_value="http://purl.org/dc/terms/identifier",
         advanced=True,
+    ),
+    PluginParameter(
+        name="csi_label",
+        label="CSI label",
+        default_value="",
+        advanced=True,
+    ),
+    PluginParameter(
+        name="csi_description", label="CSI description", default_value="", advanced=True
     ),
 ] + [parameter["parameter"] for parameter in components.values()]
 
@@ -46,6 +58,8 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         opis: str,
         ai: str,
         csi: str,
+        csi_label: str,
+        csi_description: str,
         irdi_property: str = "http://purl.org/dc/terms/identifier",
     ):
         self.graph = graph
@@ -56,6 +70,8 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         self.opis = opis
         self.ai = ai
         self.csi = csi.upper() if csi else ""
+        self.csi_label = csi_label or self.csi
+        self.csi_description = csi_description
 
         for component, definition in components.items():
             value = self.__dict__.get(component)
@@ -67,7 +83,7 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
         """Execute Workflow plugin"""
         setup_cmempy_user_access(context.user)
-        init_counter(self.graph, self.counter)
+        init_counter(self.graph, self.counter, self.csi, self.csi_label, self.csi_description)
 
         schema = EntitySchema(type_uri="urn:type", paths=[EntityPath(self.irdi_property)])
         output = []
@@ -76,7 +92,7 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
                 item_code = generate_item_code(self.graph, self.counter)
                 irdi = (
                     f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}"
-                    f"#{self.csi}-{item_code}#001"
+                    f"#{self.csi}-{item_code}#{VI}"
                 )
                 output.append(Entity(uri=entity.uri, values=[[irdi]]))
 
