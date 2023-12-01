@@ -122,7 +122,7 @@ def generate_item_code(graph: str, identifier: str) -> str:
 
 
 def init_counter(
-        graph: str, identifier: str, csi: str, csi_label: str, csi_description: str
+    graph: str, identifier: str, csi: str, csi_label: str, csi_description: str
 ) -> None:
     """Initialize counter entity
 
