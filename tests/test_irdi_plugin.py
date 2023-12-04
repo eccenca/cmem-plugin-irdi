@@ -7,7 +7,7 @@ from cmem_plugin_base.dataintegration.entity import Entities, Entity, EntitySche
 
 from cmem_plugin_irdi.utils import base_36_encode
 from cmem_plugin_irdi.workflow.irdi_plugin import IrdiPlugin
-from tests.utils import TestExecutionContext, drop_graph, get_values, needs_cmem
+from tests.utils import TestExecutionContext, drop_graph, get_values, needs_cmem, set_counter
 
 IRDI_FORMAT = r"^\d{4}-\d{4}-[a-zA-Z0-9]{0,35}-\d-(\d{4})?#[A-Z0-9]{2}-[A-Z0-9]{6}#001"
 COUNTERS_GRAPH = "urn:counters_test"
@@ -27,6 +27,9 @@ IRDI_PARAMS_VALID = {
 
 IRDI_PARAMS_INVALID = {"icd": "12345", "opis": "a"}
 
+# ZZZZZZ
+COUNT_MAX = 2176782335
+
 INPUTS = [
     Entities(
         entities=[Entity(uri=f"urn:entity_{i}", values=[[]]) for i in range(10)],
@@ -37,6 +40,23 @@ INPUTS = [
         schema=EntitySchema(type_uri="urn:entity", paths=[]),
     ),
 ]
+
+
+@pytest.fixture(scope="module")
+def plugin() -> IrdiPlugin:
+    """Create Plugin"""
+    return IrdiPlugin(**IRDI_PARAMS_VALID)
+
+
+@pytest.fixture(scope="module")
+def plugin_results(plugin: IrdiPlugin) -> Iterator[Entities]:
+    """Execute plugin and return created IRDIs"""
+    result = plugin.execute(inputs=INPUTS, context=TestExecutionContext())
+    if not result:
+        pytest.fail("Failed to execute Plugin")
+    else:
+        yield result
+    drop_graph(COUNTERS_GRAPH)
 
 
 def test_encode() -> None:
@@ -85,13 +105,10 @@ def test_parameter_validation() -> None:
         IrdiPlugin(**params_invalid)
 
 
-@pytest.fixture(scope="module")
-def plugin_results() -> Iterator[Entities]:
-    """Execute plugin and return created IRDIs"""
-    plugin = IrdiPlugin(**IRDI_PARAMS_VALID)
-    result = plugin.execute(inputs=INPUTS, context=TestExecutionContext())
-    if not result:
-        pytest.fail("Failed to execute Plugin")
-    else:
-        yield result
-    drop_graph(COUNTERS_GRAPH)
+@needs_cmem
+def test_out_of_irdis(plugin: IrdiPlugin) -> None:
+    """Assert error is raised when counter exceeds limit"""
+    graph, identifier = plugin.graph, plugin.counter
+    set_counter(graph, identifier, COUNT_MAX)
+    with pytest.raises(ValueError, match=identifier):
+        plugin.execute(inputs=INPUTS, context=TestExecutionContext())

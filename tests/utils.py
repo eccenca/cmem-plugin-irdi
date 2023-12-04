@@ -17,6 +17,29 @@ from cmem_plugin_base.dataintegration.context import (
 )
 from cmem_plugin_base.dataintegration.entity import Entities
 
+SET_COUNTER = SparqlQuery(
+    text="""
+    PREFIX co: <http://purl.org/ontology/co/core#>
+    PREFIX dcterms: <http://purl.org/dc/terms/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    WITH <{{graph}}>
+    DELETE {
+        ?counter co:count ?count_old .
+    }
+    INSERT {
+        ?counter co:count {{count}} .
+    }
+    USING <{{graph}}>
+    WHERE {
+        ?counter a co:Counter ;
+                co:object / dcterms:identifier "{{identifier}}" ;
+                co:count ?count_old .
+    }
+    """,
+    query_type="UPDATE",
+)
+
 needs_cmem = pytest.mark.skipif(
     os.environ.get("CMEM_BASE_URI", "") == "", reason="Needs CMEM configuration"
 )
@@ -81,3 +104,10 @@ def drop_graph(graph: str) -> None:
 def get_values(entities: Entities) -> list[str]:
     """Return all values of all entities"""
     return [i for entity in entities.entities for j in entity.values for i in j]
+
+
+def set_counter(graph: str, identifier: str, count: int) -> None:
+    """Set (initialized) counter to specific value"""
+    SET_COUNTER.get_results(
+        placeholder={"graph": graph, "identifier": identifier, "count": str(count)}
+    )

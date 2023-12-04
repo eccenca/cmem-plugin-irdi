@@ -100,7 +100,6 @@ def generate_item_code(graph: str, identifier: str) -> str:
 
     :param graph: The graph in which the counter and its value are stored
     :param identifier: A unique identifier for the counter.
-    :param n:
     :return: A base 36 item code
     """
     placeholders = {"graph": graph, "identifier": identifier}
@@ -128,12 +127,14 @@ def init_counter(
 
     :param graph: The graph in which the counter is stored
     :param identifier: A unique identifier for the counter
+    :param csi: Code space identifier
     """
     # Get path to vocabulary
     current_directory = Path(__file__).resolve().parent
     absolute_path = current_directory / "vocabs/counterontology.ttl"
 
     post(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
+
     INITIALIZE_COUNTER.get_results(
         placeholder={
             "graph": graph,
