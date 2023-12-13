@@ -1,20 +1,20 @@
 """IRDI Plugin tests"""
+import random
 import re
-from collections.abc import Iterator
+import string
+from collections.abc import Callable, Generator, Iterator
 
 import pytest
-from cmem_plugin_base.dataintegration.entity import Entities, Entity, EntitySchema
+from cmem_plugin_base.dataintegration.entity import Entities, Entity, EntityPath, EntitySchema
 
 from cmem_plugin_irdi.utils import base_36_encode
 from cmem_plugin_irdi.workflow.irdi_plugin import IrdiPlugin
 from tests.utils import TestExecutionContext, drop_graph, get_values, needs_cmem, set_counter
 
 IRDI_FORMAT = r"^\d{4}-\d{4}-[a-zA-Z0-9]{0,35}-\d-(\d{4})?#[A-Z0-9]{2}-[A-Z0-9]{6}#001"
-COUNTERS_GRAPH = "urn:counters_test"
-INPUT_GRAPH = "urn:irdi_input_test"
-OUTPUT_GRAPH = "urn:irdi_output_test"
+COUNTERS_GRAPH_FORMAT = "urn:tmp:{}"
+
 IRDI_PARAMS_VALID = {
-    "graph": COUNTERS_GRAPH,
     "icd": "1234",
     "oi": "5678",
     "opi": "abcdefg",
@@ -23,40 +23,79 @@ IRDI_PARAMS_VALID = {
     "csi": "A4",
     "csi_label": "",
     "csi_description": "",
+    "input_schema_path": "",
 }
 
 IRDI_PARAMS_INVALID = {"icd": "12345", "opis": "a"}
 
+PATH_TO_URI = "pathToURI"
+
+IRDI_PARAMS_PATH = {"input_schema_path": PATH_TO_URI}
+
 # ZZZZZZ
 COUNT_MAX = 2176782335
 
+ENTITY_URI_FORMAT = "urn:entity_{}"
+
+NUMBER_OF_ENTITIES = 10
+
 INPUTS = [
     Entities(
-        entities=[Entity(uri=f"urn:entity_{i}", values=[[]]) for i in range(10)],
-        schema=EntitySchema(type_uri="urn:entity", paths=[]),
-    ),
+        entities=[
+            Entity(uri=ENTITY_URI_FORMAT.format(i), values=[[]]) for i in range(NUMBER_OF_ENTITIES)
+        ],
+        schema=EntitySchema(type_uri="", paths=[]),
+    )
+]
+
+INPUTS_PATH = [
     Entities(
-        entities=[Entity(uri=f"urn:entity_{i}", values=[[]]) for i in range(10, 20)],
-        schema=EntitySchema(type_uri="urn:entity", paths=[]),
-    ),
+        entities=[
+            Entity(uri="", values=[[ENTITY_URI_FORMAT.format(i)]])
+            for i in range(NUMBER_OF_ENTITIES)
+        ],
+        schema=EntitySchema(type_uri="", paths=[EntityPath(path=PATH_TO_URI)]),
+    )
 ]
 
 
 @pytest.fixture(scope="module")
-def plugin() -> IrdiPlugin:
+def counter_graph() -> Generator:
+    """Return function which creates a random graph name"""
+    created_graphs = []
+
+    def _create_counter_graph() -> str:
+        graph = COUNTERS_GRAPH_FORMAT.format(
+            "".join(random.choice(string.ascii_letters) for i in range(10))  # noqa: S311
+        )
+        created_graphs.append(graph)
+        return graph
+
+    yield _create_counter_graph
+    for created_graph in created_graphs:
+        drop_graph(created_graph)
+
+
+@pytest.fixture(
+    params=[(IRDI_PARAMS_VALID, INPUTS), (IRDI_PARAMS_VALID | IRDI_PARAMS_PATH, INPUTS_PATH)],
+    scope="module",
+)
+def plugin_setup(request, counter_graph: Callable) -> tuple[IrdiPlugin, list[Entities]]:  # noqa: ANN001
     """Create Plugin"""
-    return IrdiPlugin(**IRDI_PARAMS_VALID)
+    kwargs, inputs = request.param
+
+    return IrdiPlugin(graph=counter_graph(), **kwargs), inputs
 
 
 @pytest.fixture(scope="module")
-def plugin_results(plugin: IrdiPlugin) -> Iterator[Entities]:
+def plugin_results(plugin_setup: tuple[IrdiPlugin, list[Entities]]) -> Iterator[Entities]:
     """Execute plugin and return created IRDIs"""
-    result = plugin.execute(inputs=INPUTS, context=TestExecutionContext())
+    plugin, inputs = plugin_setup
+    result = plugin.execute(inputs=inputs, context=TestExecutionContext())
     if not result:
         pytest.fail("Failed to execute Plugin")
     else:
         yield result
-    drop_graph(COUNTERS_GRAPH)
 
 
 def test_encode() -> None:
@@ -68,14 +107,12 @@ def test_encode() -> None:
 @needs_cmem
 def test_irdis_created(plugin_results: Entities) -> None:
     """Assert an IRDI was created for every input"""
-    for input_entities in INPUTS:
-        for input_entity in input_entities.entities:
-            match = None
-            for result_entity in plugin_results.entities:
-                if result_entity.uri == input_entity.uri:
-                    match = result_entity
-            assert match is not None, f"No output for entity {input_entity.uri}"
-            assert len(match.values[0]) > 0, f"No IRDI for entity {input_entity.uri} created"
+    for input_entity_uri in [ENTITY_URI_FORMAT.format(i) for i in range(NUMBER_OF_ENTITIES)]:
+        for result_entity in plugin_results.entities:
+            if result_entity.uri == input_entity_uri:
+                match = result_entity
+        assert match is not None, f"No output for entity {input_entity_uri}"
+        assert len(match.values[0]) > 0, f"No IRDI for entity {input_entity_uri} created"
 
 
 @needs_cmem
@@ -93,22 +130,39 @@ def test_irdis_correct_format(plugin_results: Entities) -> None:
         assert re.match(IRDI_FORMAT, irdi) is not None
 
 
-def test_parameter_validation() -> None:
+def test_parameter_validation(counter_graph: Callable) -> None:
     """Assert error is raised when creating Plugin with invalid parameters"""
-    params_invalid = IRDI_PARAMS_VALID
-    params_invalid.update(IRDI_PARAMS_INVALID)
+    params_invalid = IRDI_PARAMS_VALID | IRDI_PARAMS_INVALID
 
     # Assert error message contains name of violating parameter
     regex = "|".join(IRDI_PARAMS_INVALID.keys())
 
     with pytest.raises(ValueError, match=regex):
-        IrdiPlugin(**params_invalid)
+        IrdiPlugin(graph=counter_graph(), **params_invalid)
 
 
 @needs_cmem
-def test_out_of_irdis(plugin: IrdiPlugin) -> None:
+def test_path_not_exists(counter_graph: Callable) -> None:
+    """Assert error is raised if specified input path is not in schema of input entities"""
+    path = PATH_TO_URI + "suffix"
+    params = IRDI_PARAMS_VALID | {"input_schema_path": path}
+    plugin = IrdiPlugin(graph=counter_graph(), **params)
+    with pytest.raises(ValueError, match=path):
+        plugin.execute(inputs=INPUTS_PATH, context=TestExecutionContext())
+
+
+@needs_cmem
+def test_out_of_irdis(plugin_setup: tuple[IrdiPlugin, list[Entities]]) -> None:
     """Assert error is raised when counter exceeds limit"""
+    plugin, inputs = plugin_setup
     graph, identifier = plugin.graph, plugin.counter
     set_counter(graph, identifier, COUNT_MAX)
     with pytest.raises(ValueError, match=identifier):
-        plugin.execute(inputs=INPUTS, context=TestExecutionContext())
+        plugin.execute(inputs=inputs, context=TestExecutionContext())
+
+
+def test_no_input(counter_graph: Callable) -> None:
+    """Assert error is raised if executed without inputs"""
+    plugin = IrdiPlugin(graph=counter_graph(), **IRDI_PARAMS_VALID)
+    with pytest.raises(ValueError, match="Input"):
+        plugin.execute(inputs=[], context=TestExecutionContext())

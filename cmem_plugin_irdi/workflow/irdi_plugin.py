@@ -12,6 +12,7 @@ from cmem_plugin_base.dataintegration.entity import (
 )
 from cmem_plugin_base.dataintegration.parameter.graph import GraphParameterType
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
+from cmem_plugin_base.dataintegration.ports import FixedNumberOfInputs, FixedSchemaPort
 from cmem_plugin_base.dataintegration.utils import setup_cmempy_user_access
 
 from cmem_plugin_irdi.components import components
@@ -28,7 +29,7 @@ PARAMETERS = [
         param_type=GraphParameterType(allow_only_autocompleted_values=False),
     ),
     PluginParameter(
-        name="irdi_property",
+        name="output_schema_path",
         label="Property",
         default_value="http://purl.org/dc/terms/identifier",
         advanced=True,
@@ -41,6 +42,12 @@ PARAMETERS = [
     ),
     PluginParameter(
         name="csi_description", label="CSI description", default_value="", advanced=True
+    ),
+    PluginParameter(
+        name="input_schema_path",
+        label="Input Schema Path / Property",
+        advanced=True,
+        default_value="",
     ),
 ] + [parameter["parameter"] for parameter in components.values()]
 
@@ -60,10 +67,12 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         csi: str,
         csi_label: str,
         csi_description: str,
-        irdi_property: str = "http://purl.org/dc/terms/identifier",
+        input_schema_path: str,
+        output_schema_path: str = "http://purl.org/dc/terms/identifier",
     ):
+        self.input_schema_path = input_schema_path
         self.graph = graph
-        self.irdi_property = irdi_property
+        self.output_schema_path = output_schema_path
         self.icd = icd
         self.oi = oi
         self.opi = opi.upper()
@@ -78,6 +87,18 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
             if value and (re.match(definition["regex"], value) is None):
                 raise ValueError(component + ": wrong format")
 
+        if self.input_schema_path:
+            self.input_ports = FixedNumberOfInputs(
+                [
+                    FixedSchemaPort(
+                        schema=EntitySchema(
+                            type_uri="",
+                            paths=[EntityPath(path=self.input_schema_path, is_uri=True)],
+                        )
+                    )
+                ]
+            )
+
         self.counter = self.icd + self.oi + self.opi + self.opis + self.ai + self.csi
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
@@ -85,15 +106,42 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         setup_cmempy_user_access(context.user)
         init_counter(self.graph, self.counter, self.csi, self.csi_label, self.csi_description)
 
-        schema = EntitySchema(type_uri="urn:type", paths=[EntityPath(self.irdi_property)])
         output = []
-        for entities in inputs:
-            for entity in entities.entities:
-                item_code = generate_item_code(self.graph, self.counter)
-                irdi = (
-                    f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}"
-                    f"#{self.csi}-{item_code}#{VI}"
-                )
-                output.append(Entity(uri=entity.uri, values=[[irdi]]))
+
+        try:
+            first_input: Entities = inputs[0]
+        except IndexError as error:
+            raise ValueError("Input port not connected.") from error
+
+        schema = EntitySchema(
+            type_uri=first_input.schema.type_uri, paths=[EntityPath(self.output_schema_path)]
+        )
+
+        if self.input_schema_path:
+            uris = self._get_input_path(first_input, self.input_schema_path)
+        else:
+            uris = self._get_input_uri(first_input)
+
+        for uri in uris:
+            item_code = generate_item_code(self.graph, self.counter)
+            irdi = (
+                f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}"
+                f"#{self.csi}-{item_code}#{VI}"
+            )
+            output.append(Entity(uri=uri, values=[[irdi]]))
 
         return Entities(entities=output, schema=schema)
+
+    def _get_input_uri(self, entities: Entities) -> list[str]:
+        """Get URIs to be processed from URIs of input entities"""
+        return [entity.uri for entity in entities.entities]
+
+    def _get_input_path(self, entities: Entities, input_path: str) -> list[str]:
+        """Get URIS to be processed from values of input entities"""
+        paths = entities.schema.paths
+        try:
+            index = next(index for index, path in enumerate(paths) if path.path == input_path)
+        except StopIteration as error:
+            raise ValueError(f"Input does not contain path {input_path}") from error
+
+        return [entity.values[index][0] for entity in entities.entities]
