@@ -82,11 +82,13 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         self.csi_label = csi_label or self.csi
         self.csi_description = csi_description
 
+        # validate inputs
         for component, definition in components.items():
             value = self.__dict__.get(component)
             if value and (re.match(definition["regex"], value) is None):
                 raise ValueError(component + ": wrong format")
 
+        # define input ports if path was provided
         if self.input_schema_path:
             self.input_ports = FixedNumberOfInputs(
                 [
@@ -99,11 +101,13 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
                 ]
             )
 
+        # construct counter identifier
         self.counter = self.icd + self.oi + self.opi + self.opis + self.ai + self.csi
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
         """Execute Workflow plugin"""
         setup_cmempy_user_access(context.user)
+
         init_counter(self.graph, self.counter, self.csi, self.csi_label, self.csi_description)
 
         output = []
@@ -137,7 +141,11 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         return [entity.uri for entity in entities.entities]
 
     def _get_input_path(self, entities: Entities, input_path: str) -> list[str]:
-        """Get URIS to be processed from values of input entities"""
+        """Get URIS to be processed from values of input entities
+
+        :param input_path: path for which values are returned
+        :raises ValueError: if input_path is not in input schema of entities
+        """
         paths = entities.schema.paths
         try:
             index = next(index for index, path in enumerate(paths) if path.path == input_path)

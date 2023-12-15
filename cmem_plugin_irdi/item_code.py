@@ -1,4 +1,4 @@
-"""creating and storing item codes"""
+"""Create unique item codes"""
 from pathlib import Path
 
 from cmem.cmempy.dp.proxy.graph import post
@@ -108,7 +108,10 @@ def generate_item_code(graph: str, identifier: str) -> str:
 
     res = GET_COUNT.get_json_results(placeholder=placeholders)
 
-    count = int(res["results"]["bindings"][0]["count"]["value"])
+    try:
+        count = int(res["results"]["bindings"][0]["count"]["value"])
+    except (KeyError, IndexError) as error:
+        raise ValueError(f"No counter found for {identifier}") from error
 
     item_code = base_36_encode(count).zfill(MAX_IC_LENGTH)
 
@@ -133,6 +136,7 @@ def init_counter(
     current_directory = Path(__file__).resolve().parent
     absolute_path = current_directory / "vocabs/counterontology.ttl"
 
+    # Upload ontology
     post(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
 
     INITIALIZE_COUNTER.get_results(

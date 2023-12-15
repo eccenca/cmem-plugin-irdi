@@ -96,18 +96,29 @@ class TestExecutionContext(ExecutionContext):
 
 
 def drop_graph(graph: str) -> None:
-    """Drop graph"""
+    """Drop graph
+
+    :param graph: graph to drop
+    """
     query = SparqlQuery(text="""DROP SILENT GRAPH <{{graph}}>""", query_type="UPDATE")
     query.get_results(placeholder={"graph": graph})
 
 
 def get_values(entities: Entities) -> list[str]:
-    """Return all values of all entities"""
+    """Return all values of all entities in a single list
+
+    :param entities: entities
+    """
     return [i for entity in entities.entities for j in entity.values for i in j]
 
 
 def set_counter(graph: str, identifier: str, count: int) -> None:
-    """Set (initialized) counter to specific value"""
+    """Set (initialized) counter to specific value
+
+    :param graph: graph in which the counter is stored
+    :param identifier: identifier of the counter
+    :count number that counter will be set to
+    """
     SET_COUNTER.get_results(
         placeholder={"graph": graph, "identifier": identifier, "count": str(count)}
     )
