@@ -93,7 +93,7 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
                     FixedSchemaPort(
                         schema=EntitySchema(
                             type_uri="",
-                            paths=[EntityPath(path=self.input_schema_path, is_uri=True)],
+                            paths=[EntityPath(path=self.input_schema_path)],
                         )
                     )
                 ]
