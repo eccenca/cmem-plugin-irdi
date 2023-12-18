@@ -42,10 +42,11 @@ PARAMETERS = [
         advanced=True,
     ),
     PluginParameter(
-        name="csi_description", label="CSI description",
+        name="csi_description",
+        label="CSI description",
         description="Description of CSI entity that will be created in the counter graph",
         default_value="",
-        advanced=True
+        advanced=True,
     ),
     PluginParameter(
         name="input_schema_path",
