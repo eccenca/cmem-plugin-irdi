@@ -2,7 +2,7 @@
 name = "cmem-plugin-irdi"
 version = "0.0.0"
 license = "Apache-2.0"
-description = "TODO"
+description = "Create unique IRDIs"
 authors = ["Robert Klose <robert.klose@eccenca.com>"]
 classifiers = [
     "Development Status :: 4 - Beta",

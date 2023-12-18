@@ -4,7 +4,7 @@ _src_path: gh:eccenca/cmem-plugin-template
 author_mail: robert.klose@eccenca.com
 author_name: Robert Klose
 github_page: ''
-project_description: TODO
+project_description: Create unique IRDIs
 project_slug: irdi
 pypi: false
 

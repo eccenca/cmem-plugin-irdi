@@ -30,18 +30,22 @@ PARAMETERS = [
     ),
     PluginParameter(
         name="output_schema_path",
-        label="Property",
+        label="Output Schema Path / Property",
         default_value="http://purl.org/dc/terms/identifier",
         advanced=True,
     ),
     PluginParameter(
         name="csi_label",
         label="CSI label",
+        description="Label of CSI entity that will be created in the counter graph",
         default_value="",
         advanced=True,
     ),
     PluginParameter(
-        name="csi_description", label="CSI description", default_value="", advanced=True
+        name="csi_description", label="CSI description",
+        description="Description of CSI entity that will be created in the counter graph",
+        default_value="",
+        advanced=True
     ),
     PluginParameter(
         name="input_schema_path",
