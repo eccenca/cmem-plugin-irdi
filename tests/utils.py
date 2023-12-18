@@ -33,7 +33,7 @@ SET_COUNTER = SparqlQuery(
     USING <{{graph}}>
     WHERE {
         ?counter a co:Counter ;
-                co:object / dcterms:identifier "{{identifier}}" ;
+                dcterms:identifier "{{identifier}}" ;
                 co:count ?count_old .
     }
     """,

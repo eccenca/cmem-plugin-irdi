@@ -2,6 +2,7 @@
 import re
 from typing import Sequence  # noqa: UP035
 
+import rfc3987
 from cmem_plugin_base.dataintegration.context import ExecutionContext
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
@@ -35,16 +36,9 @@ PARAMETERS = [
         advanced=True,
     ),
     PluginParameter(
-        name="csi_label",
-        label="CSI label",
-        description="Label of CSI entity that will be created in the counter graph",
-        default_value="",
-        advanced=True,
-    ),
-    PluginParameter(
-        name="csi_description",
-        label="CSI description",
-        description="Description of CSI entity that will be created in the counter graph",
+        name="counted_object",
+        label="Counted object",
+        description="Object that is counted. Can be an IRI",
         default_value="",
         advanced=True,
     ),
@@ -70,8 +64,7 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         opis: str,
         ai: str,
         csi: str,
-        csi_label: str,
-        csi_description: str,
+        counted_object: str,
         input_schema_path: str,
         output_schema_path: str = "http://purl.org/dc/terms/identifier",
     ):
@@ -84,14 +77,18 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
         self.opis = opis
         self.ai = ai
         self.csi = csi.upper() if csi else ""
-        self.csi_label = csi_label or self.csi
-        self.csi_description = csi_description
+        self.counted_object = counted_object
 
         # validate inputs
         for component, definition in components.items():
             value = self.__dict__.get(component)
             if value and (re.match(definition["regex"], value) is None):
                 raise ValueError(component + ": wrong format")
+
+        if self.counted_object and (
+            rfc3987.match(self.counted_object, rule="absolute_IRI") is None
+        ):
+            raise ValueError(f"Counted object: {self.counted_object} is not a valid URI")
 
         # define input ports if path was provided
         if self.input_schema_path:
@@ -107,13 +104,13 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
             )
 
         # construct counter identifier
-        self.counter = self.icd + self.oi + self.opi + self.opis + self.ai + self.csi
+        self.counter = f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}" f"#{self.csi}"
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
         """Execute Workflow plugin"""
         setup_cmempy_user_access(context.user)
 
-        init_counter(self.graph, self.counter, self.csi, self.csi_label, self.csi_description)
+        init_counter(self.graph, self.counter, self.counted_object)
 
         output = []
 

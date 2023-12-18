@@ -20,29 +20,25 @@ INITIALIZE_COUNTER = SparqlQuery(
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     WITH <{{graph}}>
+    DELETE {
+        ?counter co:object ?object .
+    }
     INSERT {
         <{{graph}}> a <https://vocab.eccenca.com/di/Dataset> .
 
-        <https://ns.eccenca.com/irdi/csi/{{csi}}> a owl:Class;
-            rdfs:label "{{csi_label}}";
-            rdfs:comment "{{csi_description}}" .
-
-
         ?counter a co:Counter ;
-                 co:object ?counted_object .
+                 dcterms:identifier "{{identifier}}" ;
+                 rdfs:label "{{identifier}}";
+                 {{counted_object_term}}.
 
-        ?counted_object a <https://ns.eccenca.com/irdi/csi/{{csi}}> ;
-                        dcterms:identifier "{{identifier}}" ;
-                        rdfs:label "{{identifier}}" ;
-                        co:counter ?counter .
     } WHERE {
         BIND(SHA256("{{identifier}}") as ?identifier_encoded)
         BIND(URI(CONCAT("https://ns.eccenca.com/counter/",
                         ?identifier_encoded
                         )) as ?counter)
-        BIND(URI(CONCAT("https://ns.eccenca.com/irdi/csi/{{csi}}/",
-                        ?identifier_encoded
-                        )) as ?counted_object)
+        OPTIONAL {
+            ?counter co:object ?object .
+        }
     }
     """,
     query_type="UPDATE",
@@ -54,7 +50,7 @@ GET_COUNT: SparqlQuery = SparqlQuery(
     PREFIX dcterms: <http://purl.org/dc/terms/>
     SELECT ?count FROM <{{graph}}> WHERE {
         ?counter a co:Counter ;
-                 co:object / dcterms:identifier "{{identifier}}" ;
+                 dcterms:identifier "{{identifier}}" ;
                  co:count ?count .
     }
     """
@@ -68,26 +64,21 @@ UPDATE_COUNT: SparqlQuery = SparqlQuery(
 
     WITH <{{graph}}>
     DELETE {
-        ?counter co:count ?count_old ;
-                 rdfs:label ?label_old .
+        ?counter co:count ?count_old .
     }
     INSERT {
-        ?counter co:count ?count_new ;
-                 rdfs:label ?label_new .
+        ?counter co:count ?count_new .
     }
     USING <{{graph}}>
     WHERE {
         ?counter a co:Counter ;
-                co:object / dcterms:identifier "{{identifier}}" .
+                dcterms:identifier "{{identifier}}" .
         OPTIONAL {
-            ?counter co:count ?count_old ;
-                     rdfs:label ?label_old .
+            ?counter co:count ?count_old .
             BIND((?count_old + 1) as ?count_new)
-            BIND(STR(?count_new) as ?label_new)
         }
         OPTIONAL {
             BIND(0 as ?count_new)
-            BIND("0" as ?label_new)
         }
     }
 """,
@@ -123,9 +114,7 @@ def generate_item_code(graph: str, identifier: str) -> str:
     return item_code
 
 
-def init_counter(
-    graph: str, identifier: str, csi: str, csi_label: str, csi_description: str
-) -> None:
+def init_counter(graph: str, identifier: str, counted_object: str | None = None) -> None:
     """Initialize counter entity
 
     :param graph: The graph in which the counter is stored
@@ -139,12 +128,12 @@ def init_counter(
     # Upload ontology
     post(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
 
+    counted_object_term = f"co:object <{counted_object}>" if counted_object else ""
+
     INITIALIZE_COUNTER.get_results(
         placeholder={
             "graph": graph,
             "identifier": identifier,
-            "csi": csi,
-            "csi_label": csi_label,
-            "csi_description": csi_description,
+            "counted_object_term": counted_object_term,
         }
     )

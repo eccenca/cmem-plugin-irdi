@@ -21,13 +21,12 @@ IRDI_PARAMS_VALID = {
     "opis": "5",
     "ai": "9123",
     "csi": "A4",
-    "csi_label": "",
-    "csi_description": "",
+    "counted_object": "urn:object",
     "input_schema_path": "",
 }
 
 IRDI_PARAMS_INVALID = {"icd": "12345", "opis": "a"}
-
+COUNTED_OBJECT_INVALID_URI = "object"
 PATH_TO_URI = "pathToURI"
 
 IRDI_PARAMS_PATH = {"input_schema_path": PATH_TO_URI}
@@ -166,3 +165,10 @@ def test_no_input(counter_graph: Callable) -> None:
     plugin = IrdiPlugin(graph=counter_graph(), **IRDI_PARAMS_VALID)
     with pytest.raises(ValueError, match="Input"):
         plugin.execute(inputs=[], context=TestExecutionContext())
+
+
+def test_invalid_uri(counter_graph: Callable) -> None:
+    """Assert error is raised if URI of counted object is invalid"""
+    params = IRDI_PARAMS_VALID | {"counted_object": COUNTED_OBJECT_INVALID_URI}
+    with pytest.raises(ValueError, match=COUNTED_OBJECT_INVALID_URI):
+        IrdiPlugin(graph=counter_graph(), **params)
