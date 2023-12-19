@@ -31,28 +31,39 @@ PARAMETERS = [
     ),
     PluginParameter(
         name="output_schema_path",
-        label="Output Schema Path / Property",
+        label="Output path / property",
+        description="Path or property that will connect input values and their generated IRDIs",
         default_value="http://purl.org/dc/terms/identifier",
         advanced=True,
     ),
     PluginParameter(
         name="counted_object",
         label="Counted object",
-        description="Object that is counted. Can be an IRI",
+        description="The class of objects that are counted. (IRI)",
         default_value="",
         advanced=True,
     ),
     PluginParameter(
         name="input_schema_path",
         label="Input Schema Path / Property",
+        description="Path from which input values are taken. "
+        "If empty, values are read from the URIs of the input",
         advanced=True,
         default_value="",
     ),
 ] + [parameter["parameter"] for parameter in components.values()]
 
 
-@Plugin(label="IRDI", parameters=PARAMETERS)
-class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
+@Plugin(
+    label="Generate base36 IRDI",
+    description="Create unique [ECLASS]"
+    "(https://eclass.eu/support/technical-specification/structure-and-elements/irdi) IRDIs. "
+    "IRDIs are unique for each combination of (non-advanced) parameters. "
+    "If no input path is configured, values are read from the URIs of the input "
+    "(Transformation Input) ",
+    parameters=PARAMETERS,
+)
+class IrdiPlugin(WorkflowPlugin):
     """IRDI Plugin"""
 
     def __init__(  # noqa: PLR0913
@@ -85,9 +96,7 @@ class IrdiPlugin(WorkflowPlugin):  # pylint: disable=R0902
             if value and (re.match(definition["regex"], value) is None):
                 raise ValueError(component + ": wrong format")
 
-        if self.counted_object and (
-            rfc3987.match(self.counted_object, rule="absolute_IRI") is None
-        ):
+        if self.counted_object and (rfc3987.match(self.counted_object, rule="IRI") is None):
             raise ValueError(f"Counted object: {self.counted_object} is not a valid URI")
 
         # define input ports if path was provided
