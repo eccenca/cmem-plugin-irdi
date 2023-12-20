@@ -1,0 +1,1 @@
+"""irdi - main package"""

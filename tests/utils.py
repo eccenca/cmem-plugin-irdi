@@ -1,16 +1,43 @@
 """Testing utilities."""
 import os
+from typing import ClassVar
 
 import pytest
+
 # check for cmem environment and skip if not present
 from cmem.cmempy.api import get_token
 from cmem.cmempy.config import get_oauth_default_credentials
+from cmem.cmempy.queries import SparqlQuery
 from cmem_plugin_base.dataintegration.context import (
-    PluginContext,
-    UserContext,
-    TaskContext,
     ExecutionContext,
+    PluginContext,
     ReportContext,
+    TaskContext,
+    UserContext,
+)
+from cmem_plugin_base.dataintegration.entity import Entities
+
+SET_COUNTER = SparqlQuery(
+    text="""
+    PREFIX co: <http://purl.org/ontology/co/core#>
+    PREFIX dcterms: <http://purl.org/dc/terms/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    WITH <{{graph}}>
+    DELETE {
+        ?counter co:count ?count_old .
+    }
+    INSERT {
+        ?counter co:count {{count}} .
+    }
+    USING <{{graph}}>
+    WHERE {
+        ?counter a co:Counter ;
+                dcterms:identifier "{{identifier}}" ;
+                co:count ?count_old .
+    }
+    """,
+    query_type="UPDATE",
 )
 
 needs_cmem = pytest.mark.skipif(
@@ -22,7 +49,7 @@ class TestUserContext(UserContext):
     """dummy user context that can be used in tests"""
 
     __test__ = False
-    default_credential: dict = {}
+    default_credential: ClassVar[dict] = {}
 
     def __init__(self):
         # get access token from default service account
@@ -66,3 +93,32 @@ class TestExecutionContext(ExecutionContext):
         self.report = ReportContext()
         self.task = TestTaskContext(project_id=project_id, task_id=task_id)
         self.user = TestUserContext()
+
+
+def drop_graph(graph: str) -> None:
+    """Drop graph
+
+    :param graph: graph to drop
+    """
+    query = SparqlQuery(text="""DROP SILENT GRAPH <{{graph}}>""", query_type="UPDATE")
+    query.get_results(placeholder={"graph": graph})
+
+
+def get_values(entities: Entities) -> list[str]:
+    """Return all values of all entities in a single list
+
+    :param entities: entities
+    """
+    return [i for entity in entities.entities for j in entity.values for i in j]
+
+
+def set_counter(graph: str, identifier: str, count: int) -> None:
+    """Set (initialized) counter to specific value
+
+    :param graph: graph in which the counter is stored
+    :param identifier: identifier of the counter
+    :count number that counter will be set to
+    """
+    SET_COUNTER.get_results(
+        placeholder={"graph": graph, "identifier": identifier, "count": str(count)}
+    )

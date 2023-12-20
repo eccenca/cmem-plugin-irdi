@@ -1,10 +1,10 @@
 # Changes here will be overwritten by Copier
-_commit: v5.3.4
+_commit: v6.0.1
 _src_path: gh:eccenca/cmem-plugin-template
 author_mail: robert.klose@eccenca.com
-author_name: TODO
+author_name: Robert Klose
 github_page: ''
-project_description: TODO
+project_description: Create unique IRDIs
 project_slug: irdi
 pypi: false
 
