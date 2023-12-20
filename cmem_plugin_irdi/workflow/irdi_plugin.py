@@ -25,7 +25,7 @@ VI = "001"
 PARAMETERS = [
     PluginParameter(
         name="graph",
-        label="Graph",
+        label="Counter graph",
         description="Graph in which the Item Code (IC) counter is stored",
         param_type=GraphParameterType(allow_only_autocompleted_values=False),
     ),
