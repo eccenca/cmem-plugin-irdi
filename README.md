@@ -2,7 +2,7 @@
 
 Create unique [ECLASS](https://eclass.eu/support/technical-specification/structure-and-elements/irdi) IRDIs
 
-[![eccenca Corporate Memory](https://img.shields.io/badge/eccenca-Corporate%20Memory-orange)](https://documentation.eccenca.com)   
+[![eccenca Corporate Memory](https://img.shields.io/badge/eccenca-Corporate%20Memory-orange)](https://documentation.eccenca.com) [![workflow](https://github.com/eccenca/cmem-plugin-irdi/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-irdi/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-irdi)](https://pypi.org/project/irdi) [![license](https://img.shields.io/pypi/l/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi)
 
 ## Development
 
