@@ -1,7 +1,7 @@
 """Create unique item codes"""
 from pathlib import Path
 
-from cmem.cmempy.dp.proxy.graph import post
+from cmem.cmempy.dp.proxy.graph import post_streamed
 from cmem.cmempy.queries import SparqlQuery
 
 from cmem_plugin_irdi.utils import base_36_encode
@@ -126,7 +126,7 @@ def init_counter(graph: str, identifier: str, counted_object: str | None = None)
     absolute_path = current_directory / "vocabs/counterontology.ttl"
 
     # Upload ontology
-    post(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
+    post_streamed(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
 
     counted_object_term = f"co:object <{counted_object}>" if counted_object else ""
 
