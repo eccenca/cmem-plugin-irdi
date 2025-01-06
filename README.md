@@ -2,7 +2,7 @@
 
 Create unique International Registration Data Identifier (IRDI).
 
-[![eccenca Corporate Memory][cmem-shield]][cmem-link][![workflow](https://gitlab.eccenca.com/elds/plugins/cmem-plugin-irdi/actions/workflows/check.yml/badge.svg)](https://gitlab.eccenca.com/elds/plugins/cmem-plugin-irdi/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi) [![license](https://img.shields.io/pypi/l/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi)
+[![eccenca Corporate Memory][cmem-shield]][cmem-link][![workflow](https://github.com/eccenca/cmem-plugin-irdi/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-irdi/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi) [![license](https://img.shields.io/pypi/l/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi)
 [![poetry][poetry-shield]][poetry-link] [![ruff][ruff-shield]][ruff-link] [![mypy][mypy-shield]][mypy-link] [![copier][copier-shield]][copier] 
 
 ## Development

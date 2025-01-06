@@ -9,7 +9,7 @@ This is a plugin for [eccenca](https://eccenca.com) [Corporate Memory](https://d
 ```
 cmemc admin workspace python install cmem-plugin-irdi
 ```
-[![workflow](https://gitlab.eccenca.com/elds/plugins/cmem-plugin-irdi/actions/workflows/check.yml/badge.svg)](https://gitlab.eccenca.com/elds/plugins/cmem-plugin-irdi/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi) [![license](https://img.shields.io/pypi/l/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi)
+[![workflow](https://github.com/eccenca/cmem-plugin-irdi/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-irdi/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi) [![license](https://img.shields.io/pypi/l/cmem-plugin-irdi)](https://pypi.org/project/cmem-plugin-irdi)
 [![poetry][poetry-shield]][poetry-link] [![ruff][ruff-shield]][ruff-link] [![mypy][mypy-shield]][mypy-link] [![copier][copier-shield]][copier] 
 
 [cmem-link]: https://documentation.eccenca.com
