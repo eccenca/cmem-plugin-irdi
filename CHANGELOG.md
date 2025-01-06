@@ -4,17 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/)
 
-## [Unreleased]
+
+## [0.7.0] 2025-01-06
+
+### Changed
+
+- move README documentation into plugin code
+
+### Added
+
+- logo
+
+
+## [0.6.1] 2025-01-06
 
 ### Changed
 
 - Update to plugin template 7.0.0
+
 
 ## [0.6.0] 2025-01-06
 
 ### Changed
 
 - Changed counter ontology upload to use `post_streamed` instead of `post`
+
 
 ## [0.5.0] 2024-01-03
 

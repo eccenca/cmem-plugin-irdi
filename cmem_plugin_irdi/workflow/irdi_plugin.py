@@ -5,7 +5,7 @@ from typing import Sequence  # noqa: UP035
 
 import rfc3987
 from cmem_plugin_base.dataintegration.context import ExecutionContext
-from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
+from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter, Icon
 from cmem_plugin_base.dataintegration.entity import (
     Entities,
     Entity,
@@ -22,6 +22,18 @@ from cmem_plugin_irdi.item_code import generate_item_code, init_counter
 
 # Version Identifier
 VI = "001"
+
+DOCUMENTATION = """Create unique [ECLASS](https://eclass.eu/support/technical-specification/structure-and-elements/irdi) IRDIs.
+
+IRDIs are unique for each combination of (non-advanced) parameters.
+If no input path is configured, values are read from the URIs of the input (Transformation Input).
+
+- All fields of the IRDI are configurable, except `Item Code`, which is created by the plugin.
+  - Created IRDIs are unique per configuration.
+- Specify a graph that stores the state of Item Codes.
+- Input and output paths are configurable.
+  - if no input path is configured, values are read from the URIs of the input (transformation input).
+"""
 
 PARAMETERS = [
     PluginParameter(
@@ -56,13 +68,11 @@ PARAMETERS = [
 
 
 @Plugin(
-    label="Generate base36 IRDI",
-    description="Create unique [ECLASS]"
-    "(https://eclass.eu/support/technical-specification/structure-and-elements/irdi) IRDIs. "
-    "IRDIs are unique for each combination of (non-advanced) parameters. "
-    "If no input path is configured, values are read from the URIs of the input "
-    "(Transformation Input) ",
+    label="Generate base36 IRDIs",
+    description="Create unique ECLASS IRDIs.",
+    documentation=DOCUMENTATION,
     parameters=PARAMETERS,
+    icon=Icon(file_name="logo.svg", package=__package__)
 )
 class IrdiPlugin(WorkflowPlugin):
     """IRDI Plugin"""

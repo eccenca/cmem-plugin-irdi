@@ -23,11 +23,3 @@ cmemc admin workspace python install cmem-plugin-irdi
 [copier]: https://copier.readthedocs.io/
 [copier-shield]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-inverted-border-purple.json
 
-## Plugin Usage
-
-- All fields of the IRDI are configurable, minus `Item Code`, which is created by the plugin
-  - Created IRDIs are unique per configuration
-- Specify a graph that stores the state of `Item Codes`
-- Input and output paths are configurable
-  - if no input path is configured, values are read from the URIs of the input (Transformation Input)
-
