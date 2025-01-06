@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-...
+### Changed
+
+- Update to plugin template 7.0.0
 
 ## [0.6.0] 2025-01-06
 
