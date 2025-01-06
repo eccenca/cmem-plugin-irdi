@@ -1,4 +1,5 @@
 """Create unique item codes"""
+
 from pathlib import Path
 
 from cmem.cmempy.dp.proxy.graph import post_streamed

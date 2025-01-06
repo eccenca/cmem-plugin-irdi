@@ -1,4 +1,5 @@
 """IRDI Plugin tests"""
+
 import random
 import re
 import string

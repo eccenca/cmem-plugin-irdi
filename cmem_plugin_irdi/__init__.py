@@ -1,1 +1,1 @@
-"""irdi - main package"""
+"""cmem-plugin-irdi"""

@@ -1,4 +1,5 @@
 """IRDI creation Plugin"""
+
 import re
 from typing import Sequence  # noqa: UP035
 

@@ -6,13 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-## [0.6.0] - 2025-01-06
+...
+
+## [0.6.0] 2025-01-06
 
 ### Changed
 
 - Changed counter ontology upload to use `post_streamed` instead of `post`
 
-## [0.5.0] - 2024-01-03
+## [0.5.0] 2024-01-03
 
 ### Added
 

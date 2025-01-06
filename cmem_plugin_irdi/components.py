@@ -1,4 +1,5 @@
 """PluginParameters and validation regex's for IRDI components"""
+
 from cmem_plugin_base.dataintegration.description import PluginParameter
 
 components = {
