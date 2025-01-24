@@ -24,6 +24,7 @@ IRDI_PARAMS_VALID = {
     "csi": "A4",
     "counted_object": "urn:object",
     "input_schema_path": "",
+    "output_schema_path": "http://purl.org/dc/terms/identifier",
 }
 
 IRDI_PARAMS_INVALID = {"icd": "12345", "opis": "a"}
