@@ -4,7 +4,10 @@ import re
 from typing import Sequence  # noqa: UP035
 
 import rfc3987
-from cmem_plugin_base.dataintegration.context import ExecutionContext
+from cmem_plugin_base.dataintegration.context import (
+    ExecutionContext,
+    ExecutionReport,
+)
 from cmem_plugin_base.dataintegration.description import Icon, Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     Entities,
@@ -14,7 +17,10 @@ from cmem_plugin_base.dataintegration.entity import (
 )
 from cmem_plugin_base.dataintegration.parameter.graph import GraphParameterType
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
-from cmem_plugin_base.dataintegration.ports import FixedNumberOfInputs, FixedSchemaPort
+from cmem_plugin_base.dataintegration.ports import (
+    FixedNumberOfInputs,
+    FixedSchemaPort,
+)
 from cmem_plugin_base.dataintegration.utils import setup_cmempy_user_access
 
 from cmem_plugin_irdi.components import components
@@ -48,8 +54,6 @@ PARAMETERS = [
         name="output_schema_path",
         label="Output path / property",
         description="Path or property that will connect input values and their generated IRDIs",
-        default_value="http://purl.org/dc/terms/identifier",
-        advanced=True,
     ),
     PluginParameter(
         name="counted_object",
@@ -90,7 +94,7 @@ class IrdiPlugin(WorkflowPlugin):
         csi: str,
         counted_object: str,
         input_schema_path: str,
-        output_schema_path: str = "http://purl.org/dc/terms/identifier",
+        output_schema_path: str,
     ):
         self.input_schema_path = input_schema_path
         self.graph = graph
@@ -124,6 +128,23 @@ class IrdiPlugin(WorkflowPlugin):
                     )
                 ]
             )
+        # define
+        else:
+            self.input_ports = FixedNumberOfInputs(
+                [
+                    FixedSchemaPort(
+                        schema=EntitySchema(
+                            type_uri="",
+                            paths=[],
+                        )
+                    )
+                ]
+            )
+
+        # define output port
+        self.output_port = FixedSchemaPort(
+            schema=EntitySchema(type_uri="", paths=[EntityPath(path=self.output_schema_path)])
+        )
 
         # construct counter identifier
         self.counter = f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}" f"#{self.csi}"
@@ -157,6 +178,15 @@ class IrdiPlugin(WorkflowPlugin):
                 f"#{self.csi}-{item_code}#{VI}"
             )
             output.append(Entity(uri=uri, values=[[irdi]]))
+
+        # write execution report
+        context.report.update(
+            ExecutionReport(
+                entity_count=len(output),
+                operation_desc="IRDIs created",
+                sample_entities=Entities(entities=output[:10], schema=schema),
+            )
+        )
 
         return Entities(entities=output, schema=schema)
 
