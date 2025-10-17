@@ -147,7 +147,7 @@ class IrdiPlugin(WorkflowPlugin):
         )
 
         # construct counter identifier
-        self.counter = f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}" f"#{self.csi}"
+        self.counter = f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}#{self.csi}"
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
         """Execute Workflow plugin"""
@@ -174,8 +174,7 @@ class IrdiPlugin(WorkflowPlugin):
         for uri in uris:
             item_code = generate_item_code(self.graph, self.counter)
             irdi = (
-                f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}"
-                f"#{self.csi}-{item_code}#{VI}"
+                f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}#{self.csi}-{item_code}#{VI}"
             )
             output.append(Entity(uri=uri, values=[[irdi]]))
 

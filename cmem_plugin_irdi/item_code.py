@@ -109,7 +109,7 @@ def generate_item_code(graph: str, identifier: str) -> str:
 
     if len(item_code) > MAX_IC_LENGTH:
         raise ValueError(
-            f"Maximum Item Code length ({MAX_IC_LENGTH}) for " f"counter {identifier} reached"
+            f"Maximum Item Code length ({MAX_IC_LENGTH}) for counter {identifier} reached"
         )
 
     return item_code

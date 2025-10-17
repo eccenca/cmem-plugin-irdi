@@ -19,8 +19,7 @@ components = {
     "opi": {
         "parameter": PluginParameter(
             name="opi",
-            label="Organization Part Identifier (OPI): Alphanumeric, up to 35 "
-            "characters (base36)",
+            label="Organization Part Identifier (OPI): Alphanumeric, up to 35 characters (base36)",
             default_value="",
         ),
         "regex": r"^[a-zA-Z0-9]{0,35}$",
