@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 
-- updated template and ran linting
+- updated template, ran linter and fixed dependency issues
 - tested functionality with python 3.13
 
 ## [0.7.1] 2025-02-03
