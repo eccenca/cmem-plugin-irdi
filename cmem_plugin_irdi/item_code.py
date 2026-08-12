@@ -1,16 +1,18 @@
 """Create unique item codes"""
 
+import json
 from pathlib import Path
 
-from cmem.cmempy.dp.proxy.graph import post_streamed
-from cmem.cmempy.queries import SparqlQuery
+from cmem_client.client import Client
+from cmem_client.models.query_catalog import Query, QueryType
+from cmem_client.repositories.protocols.import_item import ImportConflictPolicy
 
 from cmem_plugin_irdi.utils import base_36_encode
 
 MAX_IC_LENGTH = 6
 COUNTER_ONTOLOGY_GRAPH = "http://purl.org/ontology/co/core#"
 
-INITIALIZE_COUNTER = SparqlQuery(
+INITIALIZE_COUNTER = Query(
     text="""
     PREFIX co: <http://purl.org/ontology/co/core#>
     PREFIX dcterms: <http://purl.org/dc/terms/>
@@ -42,10 +44,10 @@ INITIALIZE_COUNTER = SparqlQuery(
         }
     }
     """,
-    query_type="UPDATE",
+    query_type=QueryType.UPDATE,
 )
 
-GET_COUNT: SparqlQuery = SparqlQuery(
+GET_COUNT: Query = Query(
     text="""
     PREFIX co: <http://purl.org/ontology/co/core#>
     PREFIX dcterms: <http://purl.org/dc/terms/>
@@ -54,10 +56,11 @@ GET_COUNT: SparqlQuery = SparqlQuery(
                  dcterms:identifier "{{identifier}}" ;
                  co:count ?count .
     }
-    """
+    """,
+    query_type=QueryType.SELECT,
 )
 
-UPDATE_COUNT: SparqlQuery = SparqlQuery(
+UPDATE_COUNT: Query = Query(
     text="""
     PREFIX co: <http://purl.org/ontology/co/core#>
     PREFIX dcterms: <http://purl.org/dc/terms/>
@@ -83,22 +86,40 @@ UPDATE_COUNT: SparqlQuery = SparqlQuery(
         }
     }
 """,
-    query_type="UPDATE",
+    query_type=QueryType.UPDATE,
 )
 
 
-def generate_item_code(graph: str, identifier: str) -> str:
+def execute_query(
+    client: Client, query: Query, placeholder: dict[str, str], accept: str = "default"
+) -> str:
+    """Fill the placeholders of a query and execute it
+
+    :param client: cmem-client client used to execute the query
+    :param query: query to execute
+    :param placeholder: values for the placeholders of the query
+    :param accept: accept header for the result format
+    :return: raw query result
+    """
+    filled = Query(text=query.fill_placeholders(placeholder), query_type=query.query_type)
+    return str(client.queries.execute_query(query=filled, accept=accept))
+
+
+def generate_item_code(client: Client, graph: str, identifier: str) -> str:
     """Generate a base 36 IC (item code)
 
+    :param client: cmem-client client used to access Corporate Memory
     :param graph: The graph in which the counter and its value are stored
     :param identifier: A unique identifier for the counter.
     :return: A base 36 item code
     """
     placeholders = {"graph": graph, "identifier": identifier}
 
-    UPDATE_COUNT.get_results(placeholder=placeholders)
+    execute_query(client, UPDATE_COUNT, placeholders)
 
-    res = GET_COUNT.get_json_results(placeholder=placeholders)
+    res = json.loads(
+        execute_query(client, GET_COUNT, placeholders, accept="application/sparql-results+json")
+    )
 
     try:
         count = int(res["results"]["bindings"][0]["count"]["value"])
@@ -115,26 +136,35 @@ def generate_item_code(graph: str, identifier: str) -> str:
     return item_code
 
 
-def init_counter(graph: str, identifier: str, counted_object: str | None = None) -> None:
+def init_counter(
+    client: Client, graph: str, identifier: str, counted_object: str | None = None
+) -> None:
     """Initialize counter entity
 
+    :param client: cmem-client client used to access Corporate Memory
     :param graph: The graph in which the counter is stored
     :param identifier: A unique identifier for the counter
-    :param csi: Code space identifier
+    :param counted_object: The class of objects that are counted (IRI)
     """
     # Get path to vocabulary
     current_directory = Path(__file__).resolve().parent
     absolute_path = current_directory / "vocabs/counterontology.ttl"
 
     # Upload ontology
-    post_streamed(graph=COUNTER_ONTOLOGY_GRAPH, file=absolute_path, replace=True)
+    client.graphs.import_item(
+        path=absolute_path,
+        key=COUNTER_ONTOLOGY_GRAPH,
+        on_conflict=ImportConflictPolicy.REPLACE,
+    )
 
     counted_object_term = f"co:object <{counted_object}>" if counted_object else ""
 
-    INITIALIZE_COUNTER.get_results(
-        placeholder={
+    execute_query(
+        client,
+        INITIALIZE_COUNTER,
+        {
             "graph": graph,
             "identifier": identifier,
             "counted_object_term": counted_object_term,
-        }
+        },
     )

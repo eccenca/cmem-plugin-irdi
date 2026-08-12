@@ -4,14 +4,10 @@ Remove this and other example files after bootstrapping your project.
 """
 
 import os
-from typing import ClassVar
 
 import pytest
-
-# check for cmem environment and skip if not present
-from cmem.cmempy.api import get_token
-from cmem.cmempy.config import get_oauth_default_credentials
-from cmem.cmempy.queries import SparqlQuery
+from cmem_client.client import Client
+from cmem_client.models.query_catalog import Query, QueryType
 from cmem_plugin_base.dataintegration.context import (
     ExecutionContext,
     PluginContext,
@@ -20,8 +16,11 @@ from cmem_plugin_base.dataintegration.context import (
     UserContext,
 )
 from cmem_plugin_base.dataintegration.entity import Entities
+from cmem_plugin_base.testing import TestSystemContext
 
-SET_COUNTER = SparqlQuery(
+from cmem_plugin_irdi.item_code import execute_query
+
+SET_COUNTER = Query(
     text="""
     PREFIX co: <http://purl.org/ontology/co/core#>
     PREFIX dcterms: <http://purl.org/dc/terms/>
@@ -41,7 +40,7 @@ SET_COUNTER = SparqlQuery(
                 co:count ?count_old .
     }
     """,
-    query_type="UPDATE",
+    query_type=QueryType.UPDATE,
 )
 
 needs_cmem = pytest.mark.skipif(
@@ -49,19 +48,19 @@ needs_cmem = pytest.mark.skipif(
 )
 
 
+def get_client() -> Client:
+    """Get a cmem-client client configured from the environment"""
+    return Client.from_env()
+
+
 class TestUserContext(UserContext):
     """dummy user context that can be used in tests"""
 
     __test__ = False
-    default_credential: ClassVar[dict] = {}
 
     def __init__(self):
         # get access token from default service account
-        if not TestUserContext.default_credential:
-            TestUserContext.default_credential = get_oauth_default_credentials()
-        access_token = get_token(_oauth_credentials=TestUserContext.default_credential)[
-            "access_token"
-        ]
+        access_token = get_client().auth.get_access_token()
         self.token = lambda: access_token
 
 
@@ -76,6 +75,7 @@ class TestPluginContext(PluginContext):
     ):
         self.project_id = project_id
         self.user = TestUserContext()
+        self.system = TestSystemContext()
 
 
 class TestTaskContext(TaskContext):
@@ -97,6 +97,7 @@ class TestExecutionContext(ExecutionContext):
         self.report = ReportContext()
         self.task = TestTaskContext(project_id=project_id, task_id=task_id)
         self.user = TestUserContext()
+        self.system = TestSystemContext()
 
 
 def drop_graph(graph: str) -> None:
@@ -104,8 +105,8 @@ def drop_graph(graph: str) -> None:
 
     :param graph: graph to drop
     """
-    query = SparqlQuery(text="""DROP SILENT GRAPH <{{graph}}>""", query_type="UPDATE")
-    query.get_results(placeholder={"graph": graph})
+    query = Query(text="""DROP SILENT GRAPH <{{graph}}>""", query_type=QueryType.UPDATE)
+    execute_query(get_client(), query, {"graph": graph})
 
 
 def get_values(entities: Entities) -> list[str]:
@@ -123,6 +124,8 @@ def set_counter(graph: str, identifier: str, count: int) -> None:
     :param identifier: identifier of the counter
     :count number that counter will be set to
     """
-    SET_COUNTER.get_results(
-        placeholder={"graph": graph, "identifier": identifier, "count": str(count)}
+    execute_query(
+        get_client(),
+        SET_COUNTER,
+        {"graph": graph, "identifier": identifier, "count": str(count)},
     )
