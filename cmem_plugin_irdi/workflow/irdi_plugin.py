@@ -4,6 +4,7 @@ import re
 from typing import Sequence  # noqa: UP035
 
 import rfc3987
+from cmem_plugin_base.dataintegration.client import get_client
 from cmem_plugin_base.dataintegration.context import (
     ExecutionContext,
     ExecutionReport,
@@ -21,7 +22,6 @@ from cmem_plugin_base.dataintegration.ports import (
     FixedNumberOfInputs,
     FixedSchemaPort,
 )
-from cmem_plugin_base.dataintegration.utils import setup_cmempy_user_access
 
 from cmem_plugin_irdi.components import components
 from cmem_plugin_irdi.item_code import generate_item_code, init_counter
@@ -151,9 +151,9 @@ class IrdiPlugin(WorkflowPlugin):
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
         """Execute Workflow plugin"""
-        setup_cmempy_user_access(context.user)
+        client = get_client(context)
 
-        init_counter(self.graph, self.counter, self.counted_object)
+        init_counter(client, self.graph, self.counter, self.counted_object)
 
         output = []
 
@@ -172,7 +172,7 @@ class IrdiPlugin(WorkflowPlugin):
             uris = self._get_input_uri(first_input)
 
         for uri in uris:
-            item_code = generate_item_code(self.graph, self.counter)
+            item_code = generate_item_code(client, self.graph, self.counter)
             irdi = (
                 f"{self.icd}-{self.oi}-{self.opi}-{self.opis}-{self.ai}#{self.csi}-{item_code}#{VI}"
             )
