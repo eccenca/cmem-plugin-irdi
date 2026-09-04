@@ -83,7 +83,7 @@ PARAMETERS = [
 class IrdiPlugin(WorkflowPlugin):
     """IRDI Plugin"""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913 PLR0917
         self,
         graph: str,
         icd: str,
